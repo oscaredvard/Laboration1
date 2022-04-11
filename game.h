@@ -19,15 +19,18 @@ typedef struct monster {
     stats stats;
 } monster;
 
-typedef struct floor { 
+typedef struct GR { 
     bool ground;
-    bool rwall;
-    bool lwall;
-    bool bwall;
-    bool fwall;
     bool roof;
-    
-} floor;
+} GR;
+
+typedef struct XW {
+    bool xwall;
+} XW;
+
+typedef struct ZW {
+    bool zwall;
+} ZW;
 
 void printTitle(void);
-void printRoom(floor f);
+void printRoom(GR f);
