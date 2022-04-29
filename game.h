@@ -3,21 +3,19 @@
 #include <stdbool.h>
 
 typedef struct stats {
+    int LV;
+    int MAX_HP;
     int HP;
     int ATK;
     int DEF;
     int Speed;
+    int EXP;
 } stats;
 
-typedef struct character {
+typedef struct actor {
     char name[20];
     stats stats;
-} character;
-
-typedef struct monster {
-    char name[20];
-    stats stats;
-} monster;
+} actor;
 
 typedef struct GR { 
     bool ground;
