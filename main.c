@@ -1,4 +1,5 @@
 #include "include/raylib.h"
+#include "include/raymath.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -48,6 +49,10 @@ int main()
     I.stats.DEF = 2;
     I.stats.Speed = 5;
     I.stats.EXP = 0;
+    I.stats.gold = 100;
+    I.equipment.weapon = 0;
+    I.equipment.defense = 0;
+    I.inventory.potion = 2;
 
     //Monsters
     actor Slime;
@@ -57,6 +62,7 @@ int main()
     Slime.stats.DEF = 5;
     Slime.stats.Speed = 2;
     Slime.stats.EXP = 50;
+    Slime.stats.gold = 5;
 
     actor Bat;
     Bat.stats.LV = 1;
@@ -65,6 +71,7 @@ int main()
     Bat.stats.DEF = 5;
     Bat.stats.Speed = 7;
     Bat.stats.EXP = 50;
+    Bat.stats.gold = 10;
 
     actor Ghost;
     Ghost.stats.LV = 1;
@@ -76,13 +83,21 @@ int main()
 
     actor * aptr;
 
-    typedef enum BattleScreen { INTRO = 0, OPT1, OPT2, OPT3, OPT4, ATK_SEQ1, ATK_SEQ2, ATK_SEQ3, ATK_SEQ4, DEF_SEQ1, DEF_SEQ2, DEF_SEQ3, ITEM_OPT1, ITEM_SEQ1, ITEM_ERR, ITEM_SEQ2, ITEM_SEQ3, ITEM_SEQ4, ITEM_SEQ5, FLEE, FLEE_S, FLEE_F, VICTORY, EXP, LVL_UP, DEAD, GAME_OVER} BattleScreen;
+    typedef enum BattleScreen {INTRO = 0, OPT1, OPT2, OPT3, OPT4, ATK_SEQ1, ATK_SEQ2, ATK_SEQ3, ATK_SEQ4, DEF_SEQ1, DEF_SEQ2, DEF_SEQ3, ITEM_OPT1, ITEM_SEQ1, ITEM_ERR, ITEM_SEQ2, ITEM_SEQ3, ITEM_SEQ4, ITEM_SEQ5, FLEE, FLEE_S, FLEE_F, VICTORY, EXP, COINS, LVL_UP, DEAD, GAME_OVER} BattleScreen;
 
     BattleScreen Battle = INTRO;
 
-    typedef enum Menu { START = 0, M_OPT1, M_OPT2, STATS, ITEMS} Menu;
+    typedef enum Menu {START = 0, M_OPT1, M_OPT2, STATS, ITEMS1, ITEMS2, ITEMS3, ITEMS4} Menu;
 
     Menu menu = START;
+
+    typedef enum Chest {INITIAL = 0, GOT, DESC} Chest;
+
+    Chest chest1 = INITIAL;
+
+    typedef enum Shop {ITEM1 = 0, ITEM2, ITEM3} Shop;
+
+    Shop shop_nav = ITEM1;
 
     time_t timer;
     time_t c_timer;
@@ -100,6 +115,12 @@ int main()
 
     char * text;
 
+    char * tip_ptr;
+
+    char tiptext[30] = {"PRESS SPACE FOR MENU"};
+
+    tip_ptr = tiptext;
+    
     char * menutext;
 
     char menu_opt1[20] = {">Stats   Items"};
@@ -110,13 +131,17 @@ int main()
 
     char stats[50];
 
-    sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1);
+    sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
 
-    int amount = 2;
-
-    char items[20];
-    
-    sprintf(items, ">Potion x%d", amount);
+    char underscore[10] = {"_"};
+    char inventory_opt1[60];
+    sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+    char inventory_opt2[60];
+    sprintf(inventory_opt2, " Potion x%d\n>%s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+    char inventory_opt3[60];
+    sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
+    char inventory_opt4[60];
+    sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
 
     char * floortext;
 
@@ -163,7 +188,7 @@ int main()
 
     char item[20];
 
-    sprintf(item, ">Potion x%d", amount); 
+    sprintf(item, ">Potion x%d", I.inventory.potion); 
 
     char item_err[20] = {"You have no left!"};
 
@@ -184,6 +209,13 @@ int main()
 
     char EXP_gain[20] = {"You gain __ EXP"};
 
+    char gold[20] = {"You get __ gold"};
+
+    char got_tele[30] = {"You got a Teleporter!"};
+    char desc_tele[60] = {"With this you can teleport\nto the last ladder you used."};
+    char * chesttext;
+    chesttext = got_tele;
+
     //text = monstertext;
 
     char battlemenu1[100] = {">Attack  Defend  Items  Flee"};
@@ -197,6 +229,26 @@ int main()
     char I_defend[20] = {"You defend yourself"};
 
     text = monstertext;
+
+    char * shop_item_text;
+    char * shop_q_text;
+    char question[30] = {"What would you like to buy?"};
+    shop_q_text = question;
+    char thanks[30] = {"Thank you for your purchase!"};
+    char cant_afford[50] = {"You don't have enough gold for this item."};
+    char already_bought[50] = {"You've already bought this item."};
+    char shop_sword[100];
+    char shop_shield[100];
+    char shop_potion[100];
+    int sword_cost = 30;
+    int shield_cost = 20;
+    int potion_cost = 10;
+    sprintf(shop_sword, ">Sword          Shield          Potion\n  %d G            %d G            %d G", sword_cost, shield_cost, potion_cost);
+    sprintf(shop_shield," Sword         >Shield          Potion\n  %d G            %d G            %d G", sword_cost, shield_cost, potion_cost);
+    sprintf(shop_potion," Sword          Shield         >Potion\n  %d G            %d G            %d G", sword_cost, shield_cost, potion_cost);
+
+    char goldtext[20];
+    sprintf(goldtext, "My gold: %d G", I.stats.gold);
 
     const int screenWidth = 1024;
     const int screenHeight = 576;
@@ -216,10 +268,20 @@ int main()
     Texture2D g_texture = LoadTexture("img/stonefloor.png");
     Texture2D rf_texture = LoadTexture("img/stonewall.png");
     Texture2D ladder = LoadTexture("img/ladder.png");
-    Texture2D hole = LoadTexture("img/hole1.png");
+    Texture2D hole = LoadTexture("img/hole2.png");
 
     Texture2D slime_png = LoadTexture("img/slime.png");
     Texture2D bat_png = LoadTexture("img/bat.png");
+
+    Model chest = LoadModel("models/chest.vox");      
+    Model openchest = LoadModel("models/openchest.vox");  
+    Vector3 chest_pos = { 0.0f, 0.0f, 8.0f };   
+    Model * chestptr = &chest;
+
+    Model shop = LoadModel("models/shop.vox");  
+    Vector3 shop_pos = {1.5f, 0.0f, 34.0f};
+
+    //fcounter = 2;
 
     Texture2D  * imgptr;
 
@@ -735,6 +797,27 @@ int main()
 
     int m_height = 150;
 
+    int tip = 0;
+
+    int chest_done1 = 0;
+
+    int chest_open1 = 0;
+
+    int shop_open = 0;
+
+    int floortext_switch = 1;
+
+    int sword_possession;
+
+    int shield_possession;
+
+    int teleporter_possession = 0;
+
+    latest latest;
+
+    latest.x = 32;
+    latest.z = 32; 
+
     Vector3 zw_battleposition = {0, 2.5, 12};
 
     //Game loop
@@ -753,7 +836,16 @@ int main()
             if (IsKeyPressed(KEY_ENTER)) {
                 main_menu_exit = 1;
                 camera.position = (Vector3){ 1.0f, 2.0f, 1.0f };
-                amount = 2;
+                I.inventory.potion = 2;
+                I.stats.LV = 1;
+                I.stats.MAX_HP = 10;
+                I.stats.HP = 10;
+                I.stats.ATK = 5;
+                I.stats.DEF = 2;
+                I.stats.Speed = 5;
+                I.stats.EXP = 0;
+                sprintf(item, ">Potion x%d", I.inventory.potion);
+                sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
                 GR_floor = &GR_floor1;
                 XW_floor = &XW_floor1;
                 ZW_floor = &ZW_floor1;
@@ -765,6 +857,8 @@ int main()
             stepcounter++;
             //printf("Stepcounter: %d\n", stepcounter);
         }
+
+        //printf("x: %f, y: %f. z: %f\n", camera.position.x, camera.position.y, camera.position.z);
 
         //Battle sequence
         if (stepcounter > random) {
@@ -882,12 +976,12 @@ int main()
                         }
                     } break;
                     case ITEM_OPT1: {
-                        if (amount != 0) {
+                        if (I.inventory.potion != 0) {
                             if (IsKeyPressed(KEY_ENTER)) {
                             Battle = ITEM_SEQ1;
                             }
                         }                       
-                        if (IsKeyPressed(KEY_ENTER) && amount == 0) {
+                        if (IsKeyPressed(KEY_ENTER) && I.inventory.potion == 0) {
                             Battle = ITEM_ERR;
                         }                                                  
                         if (IsKeyPressed(KEY_BACKSPACE)) {
@@ -947,6 +1041,12 @@ int main()
                         }
                     } break;
                     case EXP: {
+                        if (IsKeyPressed(KEY_ENTER)) {
+                            Battle = COINS;
+                            done = 0;
+                        } 
+                    } break;                       
+                    case COINS: {
                         if (levelcpy < I.stats.LV) {
                             if (IsKeyPressed(KEY_ENTER)) {
                                 Battle = LVL_UP;
@@ -1132,8 +1232,9 @@ int main()
                         case ITEM_SEQ1: {                            
                             text = use_item;
                             if (done != 1) {
-                                amount = amount - 1;
-                                sprintf(item, ">Potion x%d", amount);
+                                I.inventory.potion = I.inventory.potion - 1;
+                                sprintf(item, ">Potion x%d", I.inventory.potion);
+                                sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
                                 done = 1;
                             }                           
                         } break;
@@ -1188,11 +1289,16 @@ int main()
                                     I.stats.ATK = I.stats.ATK + 1;
                                     I.stats.DEF = I.stats.DEF + 1;
                                     I.stats.Speed = I.stats.Speed + 1;
-
                                 }
                                 done = 1;
                             }
-
+                        } break;
+                        case COINS: {
+                            text = gold;
+                            if (done != 1) {
+                                I.stats.gold = I.stats.gold + aptr->stats.gold;
+                                done = 1;
+                            }
                         } break;
                         case LVL_UP: {
                             text = level_up;
@@ -1232,7 +1338,11 @@ int main()
                     sprintf(monster_HP_lose, "The monster loses %d HP", Slime.stats.ATK);
                     */
 
-                    sprintf(EXP_gain, "You gain %d EXP", aptr->stats.EXP);
+                    sprintf(EXP_gain, "You gain %d EXP", aptr->stats.EXP);       
+
+                    sprintf(gold, "You get %d gold", aptr->stats.gold);
+
+                    sprintf(goldtext, "My gold: %d G", I.stats.gold);
 
                     DrawText(text, 300, 500, 40, WHITE);
                     DrawText(HPptr, 100, 500, 40, WHITE);
@@ -1247,8 +1357,9 @@ int main()
             access = 0;
             interrupt = 0;
             exit = 1;
-
-            sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1);
+            
+            nxtlvlEXP = pow(2,I.stats.LV)*50;
+            sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
 
             srand(time(NULL));
             rand();
@@ -1292,7 +1403,7 @@ int main()
                 } break;
                 case M_OPT2: {
                     if (IsKeyPressed(KEY_ENTER)) {
-                        menu = ITEMS;
+                        menu = ITEMS1;
                         done = 0;
                     }
                     if (IsKeyPressed(KEY_LEFT)) {
@@ -1304,27 +1415,232 @@ int main()
                         menu = M_OPT1;
                     }
                 } break;
-                case ITEMS: {
-                    if (IsKeyPressed(KEY_ENTER)) {
-                        if (done != 1 && amount != 0) {
+                case ITEMS1: {
+                    if (IsKeyPressed(KEY_ENTER) && draw_menu == 1) {
+                        if (done != 1 && I.inventory.potion != 0) {
                             HPcpy = I.stats.HP;
                             HPcounter = 0;
                             while (I.stats.HP < (HPcpy+10) && I.stats.HP < I.stats.MAX_HP) {
                                 I.stats.HP = I.stats.HP + 1;         
                                 HPcounter++;  
                             }
-                            amount = amount - 1;
-                            sprintf(items, ">Potion x%d", amount);
-                            sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1);
+                            I.inventory.potion = I.inventory.potion - 1;
+                            if (teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);  
+                            }  
+                            else {
+                                sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                sprintf(inventory_opt2, " Potion x%d\n>%s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
+                            }
+                            sprintf(item, ">Potion x%d", I.inventory.potion);
+                            sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
                             done = 1;                    
                         }
                     }
-                    if (IsKeyPressed(KEY_BACKSPACE)) {
+                    else if (IsKeyPressed(KEY_UP)) {
+                        menu = ITEMS4;
+                    }
+                    else if (IsKeyPressed(KEY_DOWN)) {
+                        menu = ITEMS2;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE)) {
+                        menu = M_OPT2;
+                    }
+                } break;
+                case ITEMS2: {
+                    if (IsKeyPressed(KEY_ENTER) && fcounter == 2) {
+                        camera.position.x = latest.x;
+                        camera.position.y = 0;
+                        camera.position.z = latest.z;                          
+                    }
+                    else if (IsKeyPressed(KEY_UP)) {
+                        menu = ITEMS1;
+                    }
+                    else if (IsKeyPressed(KEY_DOWN)) {
+                        menu = ITEMS3;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE)) {
+                        menu = M_OPT2;
+                    }
+                } break;
+                case ITEMS3: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                                         
+                    }
+                    else if (IsKeyPressed(KEY_UP)) {
+                        menu = ITEMS2;
+                    }
+                    else if (IsKeyPressed(KEY_DOWN)) {
+                        menu = ITEMS4;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE)) {
+                        menu = M_OPT2;
+                    }
+                } break;
+                case ITEMS4: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                                 
+                    }
+                    else if (IsKeyPressed(KEY_UP)) {
+                        menu = ITEMS3;
+                    }
+                    else if (IsKeyPressed(KEY_DOWN)) {
+                        menu = ITEMS1;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE)) {
                         menu = M_OPT2;
                     }
                 } break;
             }
 
+            //Chest navigation
+            switch (chest1) {
+                case INITIAL: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                        chest1 = GOT;
+                    }
+                } break;
+                case GOT: {
+                    if (chest_open1 == 1) {
+                        chesttext = got_tele;
+                        teleporter_possession = 1;
+                        sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                        sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
+                        sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                        sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);           
+                        if (IsKeyPressed(KEY_ENTER)) {
+                            chest1 = DESC;
+                        }
+                    }  
+                } break;
+                case DESC: {
+                    chesttext = desc_tele;
+                    if (IsKeyPressed(KEY_ENTER) && chest_open1 == 1) {
+                        chest_open1 = 0;
+                        chest_done1 = 1;
+                        camera.target = (Vector3){ 0.0f, 1.8f, 0.0f };
+                        SetCameraMode(camera, CAMERA_FIRST_PERSON);
+                    }  
+                } break;
+            }
+
+            //Shop navigation
+            switch (shop_nav) {
+                case ITEM1: {
+                    if (IsKeyPressed(KEY_ENTER) && shop_open == 1) {    
+                        done = 0;                   
+                        if (I.stats.gold >= sword_cost) {
+                            shop_q_text = thanks;
+                            if (done != 1) {
+                                I.stats.gold = I.stats.gold - sword_cost;
+                                sprintf(goldtext, "My gold: %d G", I.stats.gold);
+                                sword_possession = 1;
+                                if (shield_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Sword\nShield");
+                                }
+                                done = 1;
+                            }
+                        }
+                        else {
+                            shop_q_text = cant_afford;
+                        }
+                    }
+                    else if (IsKeyPressed(KEY_RIGHT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM2;
+                    }
+                    else if (IsKeyPressed(KEY_LEFT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM3;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE) && shop_open == 1) {
+                        shop_open = 0;
+                        camera.target = (Vector3){ 0.0f, 1.8f, 0.0f };
+                        SetCameraMode(camera, CAMERA_FIRST_PERSON);
+                    }  
+                } break;
+                case ITEM2: {
+                    if (IsKeyPressed(KEY_ENTER) && shop_open == 1) {
+                        done = 0;
+                        if (I.stats.gold >= shield_cost) {
+                            shop_q_text = thanks;
+                            if (done != 1) {
+                                I.stats.gold = I.stats.gold - shield_cost;
+                                sprintf(goldtext, "My gold: %d G", I.stats.gold);
+                                done = 1;
+                            }
+                        }
+                        else {
+                            shop_q_text = cant_afford;
+                        }
+                    }
+                    else if (IsKeyPressed(KEY_RIGHT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM3;
+                    }
+                    else if (IsKeyPressed(KEY_LEFT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM1;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE) && shop_open == 1) {
+                        shop_open = 0;
+                        camera.target = (Vector3){ 0.0f, 1.8f, 0.0f };
+                        SetCameraMode(camera, CAMERA_FIRST_PERSON);
+                    }  
+                } break;
+                case ITEM3: {
+                    if (IsKeyPressed(KEY_ENTER) && shop_open == 1) {
+                        done = 0;
+                        if (I.stats.gold >= potion_cost) {
+                            shop_q_text = thanks;
+                            if (done != 1) {
+                                I.stats.gold = (I.stats.gold - potion_cost);
+                                I.inventory.potion++;                  
+                                if (teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);  
+                                }  
+                                else {
+                                    sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                    sprintf(inventory_opt2, " Potion x%d\n>%s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                    sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                    sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
+                                }
+                                sprintf(item, ">Potion x%d", I.inventory.potion); 
+                                sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
+                                sprintf(goldtext, "My gold: %d G", I.stats.gold);
+                                done = 1;
+                            }
+                        }
+                        else {
+                            shop_q_text = cant_afford;
+                        }
+                    }
+                    else if (IsKeyPressed(KEY_RIGHT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM1;
+                    }
+                    else if (IsKeyPressed(KEY_LEFT)) {
+                        shop_q_text = question;
+                        shop_nav = ITEM2;
+                    }
+                    else if (IsKeyPressed(KEY_BACKSPACE)  && shop_open == 1) {
+                        done = 0;
+                        shop_open = 0;
+                        floortext_switch = 1;
+                        camera.target = (Vector3){ 0.0f, 1.8f, 0.0f };
+                        SetCameraMode(camera, CAMERA_FIRST_PERSON);
+                    }  
+                } break;                
+            }
+            
         UpdateCamera(&camera);  
 
         if (camera.position.x > 32 && camera.position.z > 32) {
@@ -1398,7 +1714,7 @@ int main()
         }
 
         x = 0;
-        z = 0;
+        z = 0;                     
 
         if (collision) {
             camera.position = oldcam_pos;
@@ -1406,7 +1722,7 @@ int main()
         
         BeginDrawing();
 
-            ClearBackground(BLACK);
+            ClearBackground(BLACK);            
 
             //XYZ | width, height, length
 
@@ -1475,11 +1791,13 @@ int main()
                     if (fcounter == 1) {
                         DrawCubeTexture(ladder, (*zw_positions)[4][5], zw_width, zw_height, zw_length, w_color); 
                         DrawCubeTexture(hole, (*g_positions)[4][4], g_width, g_height, g_length, g_color);
-                    }
-                    
-                    
-                    
+                    }   
                 }
+
+                if (fcounter == 2) {
+                    DrawModel((*chestptr), chest_pos, 0.25f, WHITE);
+                    DrawModelEx(shop, shop_pos, (Vector3){ 0, 100, 0}, 180, (Vector3){0.3f, 0.3f, 0.3f}, WHITE);
+                }        
 
             EndMode3D(); 
 
@@ -1490,17 +1808,45 @@ int main()
                 } break;
                 case M_OPT2: {
                     menutext = menu_opt2;
+                    m_height = 150;
                 } break;
                 case STATS: {
                     menutext = stats;
-                    m_height = 300;
+                    m_height = 340;
                 } break;
-                case ITEMS: {
-                    menutext = items;
+                case ITEMS1: {
+                    menutext = inventory_opt1;
+                    m_height = 220;
+                } break;
+                case ITEMS2: {
+                    menutext = inventory_opt2;
+                } break;
+                case ITEMS3: {
+                    menutext = inventory_opt3;
+                } break;
+                case ITEMS4: {
+                    menutext = inventory_opt4;
                 } break;
             }
 
-            if (IsKeyPressed(KEY_E)) {
+            switch (shop_nav) {
+                case ITEM1: {
+                    shop_item_text = shop_sword;             
+                } break;
+                case ITEM2: {
+                    shop_item_text = shop_shield;
+                } break;
+                case ITEM3: {
+                    shop_item_text = shop_potion;
+                } break;                
+            }
+
+            if (tip != 1) {
+                DrawText(tip_ptr, 700, 0, 20, WHITE);
+            }
+
+            if (IsKeyPressed(KEY_SPACE)) {
+                tip = 1;
                 if (draw_menu == 0) {
                     draw_menu = 1;
                 }
@@ -1509,13 +1855,41 @@ int main()
                 }
             }
 
+            if (camera.position.x > 1 && camera.position.x < 2 && camera.position.z > 11 && camera.position.z < 12 && fcounter == 2 && chest_done1 != 1) {
+                chest_open1 = 1;    
+                chestptr = &openchest;
+                SetCameraMode(camera, CAMERA_PERSPECTIVE);
+            }
+
+            if (camera.position.x > 0 && camera.position.x < 1 && camera.position.z > 31 && camera.position.z < 32 && fcounter == 2) {
+                shop_open = 1;    
+                floortext_switch = 0;
+                SetCameraMode(camera, CAMERA_PERSPECTIVE);
+            }
+
+            if (chest_open1 == 1) {
+                DrawRectangle(250, 100, 500, 250, BLACK);
+                DrawText(chesttext, 290, 190, 30, WHITE); 
+                camera.position = oldcam_pos;            
+            }
+
+            if (shop_open == 1) {
+                DrawRectangle(20, 30, 1000, 500, BLACK);
+                DrawText(shop_item_text, 160, 300, 40, WHITE);
+                DrawText(shop_q_text, 150, 450, 40, WHITE);   
+                DrawText(goldtext, 50, 50, 40, WHITE);
+                camera.position = oldcam_pos;          
+            }
+
             if (draw_menu == 1) {
-                DrawRectangle(700, 0, 400, m_height, BLACK);
-                DrawText(menutext, 720, 20, 30, WHITE);
+                DrawRectangle(690, 0, 410, m_height, BLACK);
+                DrawText(menutext, 710, 20, 30, WHITE);
             }
             
-            DrawRectangle(0, 0, 95, 50, BLACK);
-            DrawText(floortext, 0, 0, 50, WHITE);
+            if (floortext_switch == 1) {
+                DrawRectangle(0, 0, 95, 50, BLACK);
+                DrawText(floortext, 0, 0, 50, WHITE);                
+            }         
 
         EndDrawing();
     }
