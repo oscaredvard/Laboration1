@@ -14,8 +14,8 @@ typedef struct stats {
 } stats;
 
 typedef struct equipment {
-    int weapon;
-    int defense;
+    int r_arm;
+    int l_arm;
 } equipment;
 
 typedef struct inventory {

@@ -50,8 +50,8 @@ int main()
     I.stats.Speed = 5;
     I.stats.EXP = 0;
     I.stats.gold = 100;
-    I.equipment.weapon = 0;
-    I.equipment.defense = 0;
+    I.equipment.r_arm = 0;
+    I.equipment.l_arm = 0;
     I.inventory.potion = 2;
 
     //Monsters
@@ -87,7 +87,7 @@ int main()
 
     BattleScreen Battle = INTRO;
 
-    typedef enum Menu {START = 0, M_OPT1, M_OPT2, STATS, ITEMS1, ITEMS2, ITEMS3, ITEMS4} Menu;
+    typedef enum Menu {START = 0, M_OPT1, M_OPT2, M_OPT3, STATS, ITEMS1, ITEMS2, ITEMS3, ITEMS4, EQUIP_Y, EQUIP_N, R_ARM, L_ARM} Menu;
 
     Menu menu = START;
 
@@ -102,6 +102,9 @@ int main()
     time_t timer;
     time_t c_timer;
     int exit = 1; 
+
+    int right = 0;
+    int left = 0;
 
     int HPcpy;
 
@@ -123,11 +126,11 @@ int main()
     
     char * menutext;
 
-    char menu_opt1[20] = {">Stats   Items"};
+    char menu_opt1[30] = {">Stats   Items\n Equip."};
+    char menu_opt2[30] = {" Stats  >Items\n Equip."};
+    char menu_opt3[30] = {" Stats   Items\n>Equip."};
 
     menutext = menu_opt1;
-
-    char menu_opt2[20] = {" Stats  >Items"};
 
     char stats[50];
 
@@ -142,6 +145,14 @@ int main()
     sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
     char inventory_opt4[60];
     sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
+
+    char equip[40] = {"Right arm: None\n Left arm: None"};
+
+    char equip_y[30] = {"Equip?\n>Yes  No"};
+    char equip_n[30] = {"Equip?\n Yes >No"};
+
+    char unequip_y[30] = {"Unequip?\n>Yes  No"};
+    char unequip_n[30] = {"Unequip?\n Yes >No"};
 
     char * floortext;
 
@@ -807,9 +818,9 @@ int main()
 
     int floortext_switch = 1;
 
-    int sword_possession;
+    int sword_possession = 0;
 
-    int shield_possession;
+    int shield_possession = 0;
 
     int teleporter_possession = 0;
 
@@ -1233,8 +1244,54 @@ int main()
                             text = use_item;
                             if (done != 1) {
                                 I.inventory.potion = I.inventory.potion - 1;
-                                sprintf(item, ">Potion x%d", I.inventory.potion);
-                                sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
+                                if (sword_possession > 0  && shield_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
+                                }
+                            else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>Shield", I.inventory.potion);
+                            }
+                            else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>_", I.inventory.potion);
+                            }
+                            else if (sword_possession > 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>Shield", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>_\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n _\n>Shield", I.inventory.potion);
+                            }  
+                            else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>_", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>_", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>_\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n _\n>_", I.inventory.potion);
+                            } 
                                 done = 1;
                             }                           
                         } break;
@@ -1386,7 +1443,9 @@ int main()
 
         oldcam_pos = camera.position;
 
-        //Menu navigation
+        printf("shield_possession: %d, I.equipment.l_arm: %d, left: %d\n", shield_possession, I.equipment.l_arm, left);
+
+        //Menu navigation/logic
             switch (menu) {
                 case START: {
                     if (IsKeyPressed(KEY_ENTER)) {
@@ -1400,6 +1459,9 @@ int main()
                     if (IsKeyPressed(KEY_RIGHT)) {
                         menu = M_OPT2;
                     }
+                    if (IsKeyPressed(KEY_DOWN)) {
+                        menu = M_OPT3;
+                    }
                 } break;
                 case M_OPT2: {
                     if (IsKeyPressed(KEY_ENTER)) {
@@ -1407,6 +1469,17 @@ int main()
                         done = 0;
                     }
                     if (IsKeyPressed(KEY_LEFT)) {
+                        menu = OPT1;
+                    }
+                    if (IsKeyPressed(KEY_DOWN)) {
+                        menu = M_OPT3;
+                    }
+                } break;
+                case M_OPT3: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                        menu = R_ARM;
+                    }
+                    if (IsKeyPressed(KEY_UP)) {
                         menu = OPT1;
                     }
                 } break;
@@ -1425,18 +1498,54 @@ int main()
                                 HPcounter++;  
                             }
                             I.inventory.potion = I.inventory.potion - 1;
-                            if (teleporter_possession > 0) {
-                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
-                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
-                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
-                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);  
-                            }  
-                            else {
-                                sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                sprintf(inventory_opt2, " Potion x%d\n>%s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
+                            if (sword_possession > 0  && shield_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
+                                }
+                            else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>Shield", I.inventory.potion);
                             }
+                            else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>_", I.inventory.potion);
+                            }
+                            else if (sword_possession > 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>Shield", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n _\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>_\n Shield", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n _\n>Shield", I.inventory.potion);
+                            }  
+                            else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>_", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>_", I.inventory.potion);
+                            }  
+                            else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                sprintf(inventory_opt1, ">Potion x%d\n _\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt2, " Potion x%d\n>_\n _\n _", I.inventory.potion);
+                                sprintf(inventory_opt3, " Potion x%d\n _\n>_\n _", I.inventory.potion);
+                                sprintf(inventory_opt4, " Potion x%d\n _\n _\n>_", I.inventory.potion);
+                            } 
                             sprintf(item, ">Potion x%d", I.inventory.potion);
                             sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
                             done = 1;                    
@@ -1453,7 +1562,7 @@ int main()
                     }
                 } break;
                 case ITEMS2: {
-                    if (IsKeyPressed(KEY_ENTER) && fcounter == 2) {
+                    if (IsKeyPressed(KEY_ENTER) && teleporter_possession > 0 && fcounter > 1) {
                         camera.position.x = latest.x;
                         camera.position.y = 0;
                         camera.position.z = latest.z;                          
@@ -1469,8 +1578,11 @@ int main()
                     }
                 } break;
                 case ITEMS3: {
-                    if (IsKeyPressed(KEY_ENTER)) {
-                                         
+                    right = 1;
+                    left = 0;
+                    done = 0;
+                    if (IsKeyPressed(KEY_ENTER) && sword_possession > 0) {
+                        menu = EQUIP_Y;      
                     }
                     else if (IsKeyPressed(KEY_UP)) {
                         menu = ITEMS2;
@@ -1483,8 +1595,11 @@ int main()
                     }
                 } break;
                 case ITEMS4: {
-                    if (IsKeyPressed(KEY_ENTER)) {
-                                 
+                    left = 1;
+                    right = 0;
+                    done = 0;
+                    if (IsKeyPressed(KEY_ENTER) && shield_possession > 0) {                       
+                        menu = EQUIP_Y;
                     }
                     else if (IsKeyPressed(KEY_UP)) {
                         menu = ITEMS3;
@@ -1496,7 +1611,163 @@ int main()
                         menu = M_OPT2;
                     }
                 } break;
+                case EQUIP_Y: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                        if (done != 1) {
+                            if (right == 1 && I.equipment.r_arm == 0) {
+                                I.equipment.r_arm = 1;
+                                menu = ITEMS3;
+                            }
+                            else if (left == 1 && I.equipment.l_arm == 0) {
+                                I.equipment.l_arm = 1;
+                                menu = ITEMS4;
+                            }
+                            else if (right == 1 && I.equipment.r_arm > 0) {
+                                I.equipment.r_arm = 0;
+                                menu = ITEMS3;
+                            }
+                            else if (left == 1 && I.equipment.l_arm > 0) {
+                                I.equipment.l_arm = 0;
+                                menu = ITEMS4;
+                            }
+
+                            if (right == 1 && I.equipment.r_arm == 1) {
+                                I.stats.ATK = I.stats.ATK + 2;
+                            }
+                            if (left == 1 && I.equipment.l_arm == 1) {
+                                I.stats.DEF = I.stats.DEF + 2;
+                            }
+
+                            if (right == 1 && I.equipment.r_arm == 0) {
+                                I.stats.ATK = I.stats.ATK - 2;
+                            }
+                            if (left == 1 && I.equipment.l_arm == 0) {
+                                I.stats.DEF = I.stats.DEF - 2;
+                            }
+
+                            if (I.equipment.r_arm > 0 && I.equipment.l_arm > 0) {
+                                sprintf(equip, "Right arm: %s\n Left arm: %s", "Sword", "Shield");
+                            }
+                            else if (I.equipment.r_arm > 0 && I.equipment.l_arm == 0) {
+                                sprintf(equip, "Right arm: %s\n Left arm: None", "Sword");
+                            }
+                            else if (I.equipment.r_arm == 0 && I.equipment.l_arm > 0) {
+                                sprintf(equip, "Right arm: None\n Left arm: %s", "Shield");
+                            }
+                            else if (I.equipment.r_arm == 0 && I.equipment.l_arm == 0) {
+                                sprintf(equip, "Right arm: None\n Left arm: None");
+                            }
+                            sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
+                            done = 1;
+                        }
+                    }
+                    if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_LEFT)) {
+                        menu = EQUIP_N;
+                    }
+                } break;
+                case EQUIP_N: {
+                    if (IsKeyPressed(KEY_ENTER)) {
+                        menu = ITEMS3;
+                    }
+                    if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_LEFT)) {
+                        menu = EQUIP_Y;
+                    }
+                } break;
+                case R_ARM: {
+                    if (IsKeyPressed(KEY_BACKSPACE)) {
+                        menu = M_OPT3;
+                    }
+                    if (IsKeyPressed(KEY_DOWN)) {
+                        menu = L_ARM;
+                    }
+                } break;
+                case L_ARM: {
+                    if (IsKeyPressed(KEY_BACKSPACE)) {
+                        menu = M_OPT3;
+                    }
+                    if (IsKeyPressed(KEY_UP)) {
+                        menu = R_ARM;
+                    }
+                } break;
             }
+
+            fcounter = 2;
+
+            //Menu text
+            switch (menu) {
+                case M_OPT1: {
+                    menutext = menu_opt1;
+                    m_height = 150;
+                } break;
+                case M_OPT2: {
+                    menutext = menu_opt2;
+                    m_height = 150;
+                } break;
+                case M_OPT3: {
+                    menutext = menu_opt3;
+                    m_height = 150;
+                } break;
+                case STATS: {
+                    menutext = stats;
+                    m_height = 340;
+                } break;
+                case ITEMS1: {
+                    menutext = inventory_opt1;
+                    m_height = 220;
+                } break;
+                case ITEMS2: {
+                    menutext = inventory_opt2;
+                    m_height = 220;
+                } break;
+                case ITEMS3: {
+                    menutext = inventory_opt3;
+                    m_height = 220;
+                } break;
+                case ITEMS4: {
+                    menutext = inventory_opt4;
+                    m_height = 220;
+                } break;
+                case R_ARM: {
+                    menutext = equip;
+                    m_height = 170;
+                } break;
+                case L_ARM: {
+                    menutext = equip;
+                    m_height = 170;
+                } break;
+                case EQUIP_Y: {
+                    m_height = 170;
+                    if (right == 1 && I.equipment.r_arm == 0) {
+                        menutext = equip_y;                
+                    }
+                    else if (right == 1 && I.equipment.r_arm > 0) {
+                        menutext = unequip_y;
+                    }                 
+                    else if (left == 1 && I.equipment.l_arm == 0) {
+                        menutext = equip_y;
+                    }
+                    else if (left == 1 && I.equipment.l_arm > 0) {
+                        menutext = unequip_y;
+                    }        
+                } break;
+                case EQUIP_N: {
+                    m_height = 170;
+                    if (right == 1 && I.equipment.r_arm == 0) {
+                        menutext = equip_n;                
+                    }
+                    else if (right == 1 && I.equipment.r_arm > 0) {
+                        menutext = unequip_n;
+                    }                
+                    else if (left == 1 && I.equipment.l_arm == 0) {
+                        menutext = equip_n;
+                    }
+                    else if (left == 1 && I.equipment.l_arm > 0) {
+                        menutext = unequip_n;
+                    }      
+                } break;
+            }
+
+            //printf("right: %d, left: %d, r_arm: %d, l_arm: %d\n", right, left, I.equipment.r_arm, I.equipment.l_arm);
 
             //Chest navigation
             switch (chest1) {
@@ -1509,10 +1780,31 @@ int main()
                     if (chest_open1 == 1) {
                         chesttext = got_tele;
                         teleporter_possession = 1;
-                        sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
-                        sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
-                        sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
-                        sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);           
+                        if (sword_possession > 0 && shield_possession > 0) {
+                            sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
+                        }
+                        else if (sword_possession == 0 && shield_possession > 0) {
+                            sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n Shield", I.inventory.potion);
+                            sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>Shield", I.inventory.potion);
+                        }
+                        else if (sword_possession > 0 && shield_possession == 0) {
+                            sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n _", I.inventory.potion);
+                            sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n _", I.inventory.potion);
+                            sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n _", I.inventory.potion);
+                            sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>_", I.inventory.potion);
+                        }
+                        else if (sword_possession == 0 && shield_possession == 0) {
+                            sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                            sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n _", I.inventory.potion);
+                            sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                            sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>_", I.inventory.potion);
+                        }               
+
                         if (IsKeyPressed(KEY_ENTER)) {
                             chest1 = DESC;
                         }
@@ -1529,7 +1821,7 @@ int main()
                 } break;
             }
 
-            //Shop navigation
+            //Shop navigation/logic
             switch (shop_nav) {
                 case ITEM1: {
                     if (IsKeyPressed(KEY_ENTER) && shop_open == 1) {    
@@ -1540,9 +1832,30 @@ int main()
                                 I.stats.gold = I.stats.gold - sword_cost;
                                 sprintf(goldtext, "My gold: %d G", I.stats.gold);
                                 sword_possession = 1;
-                                if (shield_possession > 0) {
-                                    sprintf(inventory_opt1, ">Potion x%d\n Sword\nShield");
+                                if (shield_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
                                 }
+                                else if (shield_possession == 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>_", I.inventory.potion);
+                                }
+                                else if (shield_possession > 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>Shield", I.inventory.potion);
+                                }
+                                else if (shield_possession == 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>_", I.inventory.potion);
+                                }                  
                                 done = 1;
                             }
                         }
@@ -1572,6 +1885,31 @@ int main()
                             if (done != 1) {
                                 I.stats.gold = I.stats.gold - shield_cost;
                                 sprintf(goldtext, "My gold: %d G", I.stats.gold);
+                                shield_possession = 1;
+                                if (sword_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
+                                }
+                                else if (sword_possession == 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>Shield", I.inventory.potion);
+                                }
+                                else if (sword_possession > 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>Shield", I.inventory.potion);
+                                }
+                                else if (sword_possession == 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>_\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n _\n>Shield", I.inventory.potion);
+                                }  
                                 done = 1;
                             }
                         }
@@ -1601,18 +1939,54 @@ int main()
                             if (done != 1) {
                                 I.stats.gold = (I.stats.gold - potion_cost);
                                 I.inventory.potion++;                  
-                                if (teleporter_possession > 0) {
-                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
-                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _ \n _", I.inventory.potion);        
-                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
-                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _ \n>_", I.inventory.potion);  
-                                }  
-                                else {
-                                    sprintf(inventory_opt1, ">Potion x%d\n %s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                    sprintf(inventory_opt2, " Potion x%d\n>%s\n %s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                    sprintf(inventory_opt3, " Potion x%d\n %s\n>%s\n %s", I.inventory.potion, underscore, underscore, underscore);
-                                    sprintf(inventory_opt4, " Potion x%d\n %s\n %s\n>%s", I.inventory.potion, underscore, underscore, underscore);
+                                if (sword_possession > 0  && shield_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>Shield", I.inventory.potion);
                                 }
+                                else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>Shield", I.inventory.potion);
+                                }
+                                else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n Sword\n>_", I.inventory.potion);
+                                }
+                                else if (sword_possession > 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>Shield", I.inventory.potion);
+                                }  
+                                else if (sword_possession == 0 && shield_possession > 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n _\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>_\n Shield", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n _\n>Shield", I.inventory.potion);
+                                }  
+                                else if (sword_possession > 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>Sword\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n Sword\n>_", I.inventory.potion);
+                                }  
+                                else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession > 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n Teleporter\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>Teleporter\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n Teleporter\n>_\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n Teleporter\n _\n>_", I.inventory.potion);
+                                }  
+                                else if (sword_possession == 0 && shield_possession == 0 && teleporter_possession == 0) {
+                                    sprintf(inventory_opt1, ">Potion x%d\n _\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt2, " Potion x%d\n>_\n _\n _", I.inventory.potion);
+                                    sprintf(inventory_opt3, " Potion x%d\n _\n>_\n _", I.inventory.potion);
+                                    sprintf(inventory_opt4, " Potion x%d\n _\n _\n>_", I.inventory.potion);
+                                } 
                                 sprintf(item, ">Potion x%d", I.inventory.potion); 
                                 sprintf(stats, "LV:%d\nHP:%d/%d\nATK:%d\nDEF:%d\nSpeed:%d\nEXP:%d/%d -> LV:%d\nGold:%d\n", I.stats.LV, I.stats.HP, I.stats.MAX_HP, I.stats.ATK, I.stats.DEF, I.stats.Speed, I.stats.EXP, nxtlvlEXP, I.stats.LV+1, I.stats.gold);
                                 sprintf(goldtext, "My gold: %d G", I.stats.gold);
@@ -1800,34 +2174,6 @@ int main()
                 }        
 
             EndMode3D(); 
-
-            switch (menu) {
-                case M_OPT1: {
-                    menutext = menu_opt1;
-                    m_height = 150;
-                } break;
-                case M_OPT2: {
-                    menutext = menu_opt2;
-                    m_height = 150;
-                } break;
-                case STATS: {
-                    menutext = stats;
-                    m_height = 340;
-                } break;
-                case ITEMS1: {
-                    menutext = inventory_opt1;
-                    m_height = 220;
-                } break;
-                case ITEMS2: {
-                    menutext = inventory_opt2;
-                } break;
-                case ITEMS3: {
-                    menutext = inventory_opt3;
-                } break;
-                case ITEMS4: {
-                    menutext = inventory_opt4;
-                } break;
-            }
 
             switch (shop_nav) {
                 case ITEM1: {
